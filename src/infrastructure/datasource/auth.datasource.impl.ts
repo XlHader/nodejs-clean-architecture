@@ -14,6 +14,26 @@ export class AuthDatasourceImpl implements AuthDatasource {
     private readonly userMapper: UserMapperType = UserMapper.userEntityFromObject
   ) {}
 
+  async login(loginUserDto: RegisterUserDto): Promise<UserEntity> {
+    const { email, password } = loginUserDto;
+
+    try {
+      const user = await UserModel.findOne({ email });
+      if (!user) throw CustomError.badRequest('Verify your credentials');
+
+      const isPasswordValid = this.comparePassword(password, user.password);
+      if (!isPasswordValid) throw CustomError.badRequest('Verify your credentials');
+
+      return this.userMapper(user);
+    } catch (error) {
+      if (error instanceof CustomError) {
+        throw error;
+      }
+
+      throw CustomError.internalServerError();
+    }
+  }
+
   async register(registerUserDto: RegisterUserDto): Promise<UserEntity> {
     const { name, email, password } = registerUserDto;
     
